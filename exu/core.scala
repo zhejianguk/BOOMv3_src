@@ -63,6 +63,15 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val ptw_tlb = new freechips.rocketchip.rocket.TLBPTWIO()
     val trace = Output(Vec(coreParams.retireWidth, new ExtendedTracedInstruction))
     val fcsr_rm = UInt(freechips.rocketchip.tile.FPConstants.RM_SZ.W)
+
+    //===== GuardianCouncil Function: Start ====//
+    val pc = Output(UInt(vaddrBitsExtended.W))
+    val inst = Output(UInt(32.W))
+    val new_commit = Output(UInt(1.W))
+    val clk_enable_gh = Input(Bool())
+    val alu_2cycle_delay = Output(UInt(xLen.W))
+    val csr_rw_wdata = Output(UInt(xLen.W))
+    //===== GuardianCouncil Function: End ====//
   }
   //**********************************
   // construct all of the modules
