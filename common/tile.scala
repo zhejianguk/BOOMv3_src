@@ -182,7 +182,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
     outer.ght_packet_dest_SRNode.bundle          := ght.io.ght_packet_dest
-    core.io.clk_enable_gh                        := ~(outer.bigcore_hang_in_SKNode.bundle) 
+    core.io.gh_stall                             := outer.bigcore_hang_in_SKNode.bundle
     outer.ghe_event_out_SRNode.bundle            := ghe_bridge.io.out
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
     ght.io.new_commit                            := core.io.new_commit
@@ -190,7 +190,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
   } else { 
     // Not be used, added to pass the compile
-    core.io.clk_enable_gh                        := 1.U
+    core.io.gh_stall                             := 0.U
   }
 
   val ptwPorts         = ListBuffer(lsu.io.ptw, outer.frontend.module.io.ptw, core.io.ptw_tlb)
@@ -217,7 +217,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   if (outer.roccs.size > 0) {
     val (respArb, cmdRouter) = {
       val respArb = Module(new RRArbiter(new RoCCResponse()(outer.p), outer.roccs.size))
-      val cmdRouter = Module(new RoccCommandRouter(outer.roccs.map(_.opcodes))(outer.p))
+      val cmdRouter = Module(new RoccCommandRouterBoom(outer.roccs.map(_.opcodes))(outer.p))
       outer.roccs.zipWithIndex.foreach { case (rocc, i) =>
         ptwPorts ++= rocc.module.io.ptw
         rocc.module.io.cmd <> cmdRouter.io.out(i)

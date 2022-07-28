@@ -68,7 +68,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val pc = Output(UInt(vaddrBitsExtended.W))
     val inst = Output(UInt(32.W))
     val new_commit = Output(UInt(1.W))
-    val clk_enable_gh = Input(Bool())
+    val gh_stall = Input(Bool())
     val alu_2cycle_delay = Output(UInt(xLen.W))
     val csr_rw_wdata = Output(UInt(xLen.W))
     //===== GuardianCouncil Function: End ====//
@@ -734,6 +734,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.enq_partial_stall := dis_stalls.last // TODO come up with better ROB compacting scheme.
   rob.io.debug_tsc := debug_tsc_reg
   rob.io.csr_stall := csr.io.csr_stall
+  rob.io.gh_stall  := io.gh_stall
 
   // Minor hack: ecall and breaks need to increment the FTQ deq ptr earlier than commit, since
   // they write their PC into the CSR the cycle before they commit.
@@ -1321,7 +1322,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
         reset.asBool) {
     idle_cycles := 0.U
   }
-  assert (!(idle_cycles.value(13)), "Pipeline has hung.")
+  assert (!(idle_cycles.value(17)), "Pipeline has hung.")
 
   if (usingFPU) {
     fp_pipeline.io.debug_tsc_reg := debug_tsc_reg
@@ -1483,4 +1484,10 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     io.trace map (t => t.valid := false.B)
     io.ifu.debug_ftq_idx := DontCare
   }
+
+  
+  io.pc                      := rob.io.commit.uops(0).debug_pc(31,0);
+  io.inst                    := rob.io.commit.uops(0).debug_inst(31,0);
+  io.new_commit              := rob.io.commit.arch_valids(0);
+
 }

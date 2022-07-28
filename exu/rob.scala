@@ -110,6 +110,10 @@ class RobIo(
 
 
   val debug_tsc = Input(UInt(xLen.W))
+
+  //===== GuardianCouncil Function: Start ====//
+  val gh_stall = Input(Bool())
+  //===== GuardianCouncil Function: End  ====//
 }
 
 /**
@@ -401,8 +405,9 @@ class Rob(
     // Commit or Rollback
 
     // Can this instruction commit? (the check for exceptions/rob_state happens later).
-    can_commit(w) := rob_val(rob_head) && !(rob_bsy(rob_head)) && !io.csr_stall
-
+    //===== GuardianCouncil Function: Start ====//
+    can_commit(w) := rob_val(rob_head) && !(rob_bsy(rob_head)) && !io.csr_stall && !io.gh_stall
+    //===== GuardianCouncil Function: End  ====//
 
     // use the same "com_uop" for both rollback AND commit
     // Perform Commit
