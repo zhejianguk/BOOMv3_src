@@ -69,8 +69,8 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val inst = Output(UInt(32.W))
     val new_commit = Output(UInt(1.W))
     val gh_stall = Input(Bool())
-    val alu_2cycle_delay = Output(UInt(xLen.W))
-    val csr_rw_wdata = Output(UInt(xLen.W))
+    val alu_out = Output(UInt(xLen.W))
+    val jalr_target = Output(UInt(xLen.W))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -1289,6 +1289,13 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.lsu_clr_unsafe := io.lsu.clr_unsafe
   rob.io.lxcpt          <> io.lsu.lxcpt
 
+  //===== GuardianCouncil Function: Start ====//
+  rob.io.gh_effective_alu_out                    := csr_exe_unit.io.gh_effective_alu_out
+  rob.io.gh_effective_jalr_target                := csr_exe_unit.io.gh_effective_jalr_target
+  rob.io.gh_effective_rob_idx                    := csr_exe_unit.io.gh_effective_rob_idx
+  rob.io.gh_effective_valid                      := csr_exe_unit.io.gh_effective_valid
+  //===== GuardianCouncil Function: End   ====//
+
   assert (!(csr.io.singleStep), "[core] single-step is unsupported.")
 
 
@@ -1485,9 +1492,11 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     io.ifu.debug_ftq_idx := DontCare
   }
 
-  
-  io.pc                      := rob.io.commit.uops(0).debug_pc(31,0);
-  io.inst                    := rob.io.commit.uops(0).debug_inst(31,0);
-  io.new_commit              := rob.io.commit.arch_valids(0);
-
+  //===== GuardianCouncil Function: Start ====//
+  io.pc                                          := rob.io.commit.uops(0).debug_pc(31,0);
+  io.inst                                        := rob.io.commit.uops(0).debug_inst(31,0);
+  io.new_commit                                  := rob.io.commit.arch_valids(0);
+  io.alu_out                                     := rob.io.commit.gh_effective_alu_out(0);
+  io.jalr_target                                 := rob.io.commit.gh_effective_jalr_target(0);
+  //===== GuardianCouncil Function: End ====//
 }

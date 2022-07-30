@@ -176,7 +176,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.ght_pcaddr_in                         := core.io.pc
     ght.io.resetvector_in                        := outer.resetVectorSinkNode.bundle
     ght.io.ght_inst_in                           := core.io.inst
-    ght.io.ght_alu_in                            := core.io.alu_2cycle_delay
+    ght.io.ght_alu_in                            := core.io.alu_out
     ght.io.ght_mask_in                           := ght_bridge.io.out
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
@@ -186,7 +186,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     outer.ghe_event_out_SRNode.bundle            := ghe_bridge.io.out
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
     ght.io.new_commit                            := core.io.new_commit
-    ght.io.csr_rw_wdata                          := core.io.csr_rw_wdata
+    ght.io.jalr_target                           := core.io.jalr_target
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
   } else { 
     // Not be used, added to pass the compile

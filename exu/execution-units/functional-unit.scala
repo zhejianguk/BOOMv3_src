@@ -187,6 +187,12 @@ abstract class FunctionalUnit(
     val mcontext = if (isMemAddrCalcUnit) Input(UInt(coreParams.mcontextWidth.W)) else null
     val scontext = if (isMemAddrCalcUnit) Input(UInt(coreParams.scontextWidth.W)) else null
 
+    //===== GuardianCouncil Function: Start ====//
+    val gh_effective_alu_out                    = if (isAluUnit) Output(UInt(xLen.W)) else null // Revisit: make it is generic
+    val gh_effective_jalr_target                = if (isAluUnit) Output(UInt(xLen.W)) else null // Revisit: make it is generic
+    val gh_effective_rob_idx                    = if (isAluUnit) Output(UInt(7.W)) else null  // Revisit: make it is generic
+    val gh_effective_valid                      = if (isAluUnit) Output(UInt(1.W)) else null  // Revisit: make it is generic
+    //===== GuardianCouncil Function: End   ====//
   })
 }
 
@@ -420,6 +426,9 @@ class ALUUnit(isJmpUnit: Boolean = false, numStages: Int = 1, dataWidth: Int)(im
                     !io.get_ftq_pc.entry.cfi_idx.valid ||
                     (io.get_ftq_pc.entry.cfi_idx.bits =/= cfi_idx)
     }
+  //===== GuardianCouncil Function: Start ====//
+  io.gh_effective_jalr_target                := jalr_target
+  //===== GuardianCouncil Function: End   ====//
   }
 
   brinfo.target_offset := target_offset
@@ -465,6 +474,13 @@ class ALUUnit(isJmpUnit: Boolean = false, numStages: Int = 1, dataWidth: Int)(im
 
   // Exceptions
   io.resp.bits.fflags.valid := false.B
+
+  //===== GuardianCouncil Function: Start ====//
+  io.gh_effective_alu_out                    := alu.io.out    
+  // We are using req.valid because the ALU always gives the result at the same cycle
+  io.gh_effective_rob_idx                    := io.req.bits.uop.rob_idx
+  io.gh_effective_valid                      := io.req.valid 
+  //===== GuardianCouncil Function: End   ====//
 }
 
 /**
