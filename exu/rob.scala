@@ -117,6 +117,10 @@ class RobIo(
   val gh_effective_jalr_target                  = Input(UInt(xLen.W)) // Revisit: make it is generic
   val gh_effective_rob_idx                      = Input(UInt(7.W))    // Revisit: make it is generic
   val gh_effective_valid                        = Input(UInt(1.W))    // Revisit: make it is generic
+
+  val gh_effective_memaddr                      = Input(UInt(xLen.W)) // Revisit: make it is generic
+  val gh_effective_memaddr_rob_idx              = Input(UInt(7.W))    // Revisit: make it is generic
+  val gh_effective_memaddr_valid                = Input(UInt(1.W))    // Revisit: make it is generic
   //===== GuardianCouncil Function: End  ====//
 }
 
@@ -142,6 +146,7 @@ class CommitSignals(implicit p: Parameters) extends BoomBundle
   //===== GuardianCouncil Function: Start ====//
   val gh_effective_alu_out                  = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
   val gh_effective_jalr_target              = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
+  val gh_effective_memaddr                  = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
   //===== GuardianCouncil Function: End  ====//
 }
 
@@ -330,6 +335,7 @@ class Rob(
     //===== GuardianCouncil Function: Start ====//
     val gh_effective_alu_out_reg                  = Reg(Vec(numRobRows, UInt(xLen.W)))
     val gh_effective_jalr_target_reg              = Reg(Vec(numRobRows, UInt(xLen.W)))
+    val gh_effective_memaddr_reg                  = Reg(Vec(numRobRows, UInt(xLen.W)))
     //===== GuardianCouncil Function: End   ====//
     //-----------------------------------------------
     // Dispatch: Add Entry to ROB
@@ -429,6 +435,13 @@ class Rob(
     }
     io.commit.gh_effective_alu_out(w)        := gh_effective_alu_out_reg (com_idx)
     io.commit.gh_effective_jalr_target(w)    := gh_effective_jalr_target_reg (com_idx)
+
+    when (io.gh_effective_memaddr_valid === 1.U) {
+      // Revisit: currently all the same rows using the same gh_effective_alu_out & gh_effective_jalr_target
+      // This is because we are currently using the single-width rob
+      gh_effective_memaddr_reg(io.gh_effective_memaddr_rob_idx)     := io.gh_effective_memaddr
+    }
+    io.commit.gh_effective_memaddr(w)        := gh_effective_memaddr_reg (com_idx)
     //===== GuardianCouncil Function: End  ====//
 
     // use the same "com_uop" for both rollback AND commit

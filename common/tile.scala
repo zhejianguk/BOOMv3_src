@@ -187,6 +187,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
     ght.io.new_commit                            := core.io.new_commit
     ght.io.jalr_target                           := core.io.jalr_target
+    ght.io.effective_memaddr                     := core.io.effective_memaddr
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
   } else { 
     // Not be used, added to pass the compile

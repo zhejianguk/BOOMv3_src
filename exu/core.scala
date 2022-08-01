@@ -71,6 +71,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val gh_stall = Input(Bool())
     val alu_out = Output(UInt(xLen.W))
     val jalr_target = Output(UInt(xLen.W))
+    val effective_memaddr = Output(UInt(xLen.W))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -1290,10 +1291,15 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.lxcpt          <> io.lsu.lxcpt
 
   //===== GuardianCouncil Function: Start ====//
+  // Revisit: to make them for multi-issue
   rob.io.gh_effective_alu_out                    := csr_exe_unit.io.gh_effective_alu_out
   rob.io.gh_effective_jalr_target                := csr_exe_unit.io.gh_effective_jalr_target
   rob.io.gh_effective_rob_idx                    := csr_exe_unit.io.gh_effective_rob_idx
   rob.io.gh_effective_valid                      := csr_exe_unit.io.gh_effective_valid
+  
+  rob.io.gh_effective_memaddr                    := mem_units(0).io.gh_effective_memaddr
+  rob.io.gh_effective_memaddr_rob_idx            := mem_units(0).io.gh_effective_memaddr_rob_idx
+  rob.io.gh_effective_memaddr_valid              := mem_units(0).io.gh_effective_memaddr_valid
   //===== GuardianCouncil Function: End   ====//
 
   assert (!(csr.io.singleStep), "[core] single-step is unsupported.")
@@ -1498,5 +1504,6 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   io.new_commit                                  := rob.io.commit.arch_valids(0);
   io.alu_out                                     := rob.io.commit.gh_effective_alu_out(0);
   io.jalr_target                                 := rob.io.commit.gh_effective_jalr_target(0);
+  io.effective_memaddr                           := rob.io.commit.gh_effective_memaddr(0);
   //===== GuardianCouncil Function: End ====//
 }

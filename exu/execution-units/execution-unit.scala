@@ -142,6 +142,10 @@ abstract class ExecutionUnit(
     val gh_effective_jalr_target                = if (hasAlu) Output(UInt(xLen.W)) else null // Revisit: make it is generic
     val gh_effective_rob_idx                    = if (hasAlu) Output(UInt(7.W)) else null  // Revisit: make it is generic
     val gh_effective_valid                      = if (hasAlu) Output(UInt(1.W)) else null  // Revisit: make it is generic
+
+    val gh_effective_memaddr                    = if (hasMem) Output(UInt(xLen.W)) else null // Revisit: make it is generic
+    val gh_effective_memaddr_rob_idx            = if (hasMem) Output(UInt(7.W)) else null  // Revisit: make it is generic
+    val gh_effective_memaddr_valid              = if (hasMem) Output(UInt(1.W)) else null  // Revisit: make it is generic
     //===== GuardianCouncil Function: End   ====//
   })
 
@@ -406,6 +410,12 @@ class ALUExeUnit(
     if (usingFPU) {
       io.ll_fresp <> io.lsu_io.fresp
     }
+
+  //===== GuardianCouncil Function: Start ====//
+  io.gh_effective_memaddr                    := maddrcalc.io.resp.bits.addr
+  io.gh_effective_memaddr_rob_idx            := maddrcalc.io.resp.bits.uop.rob_idx
+  io.gh_effective_memaddr_valid              := maddrcalc.io.resp.valid
+  //===== GuardianCouncil Function: End   ====//  
   }
 
   // Outputs (Write Port #0)  ---------------
