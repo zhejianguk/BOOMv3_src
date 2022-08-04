@@ -169,30 +169,36 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   //===== GuardianCouncil Function: Start ====//
   if (outer.tileParams.hartId == 0) {
     println("#### Jessica #### Generating GHT for the big core, HartID: ", outer.boomParams.hartId, "...!!!")
-    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128)))   // revisit: set 32 as the total number of checkers.
-                                                                                        // revisit: total types of insts is 32
-                                                                                        // revisit: total number of SEs is 16 
-                                                                                        // revisit: packet size: 128 bits
-    ght.io.ght_pcaddr_in                         := core.io.pc
-    ght.io.resetvector_in                        := outer.resetVectorSinkNode.bundle
-    ght.io.ght_inst_in                           := core.io.inst
-    ght.io.ght_alu_in                            := core.io.alu_out
+    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128, 4)))   // revisit: set 32 as the total number of checkers.
+                                                                                           // revisit: total types of insts is 32
+                                                                                           // revisit: total number of SEs is 16 
+                                                                                           // revisit: packet size: 128 bits
+                                                                                           // revisit: core_width: 4
+
     ght.io.ght_mask_in                           := ght_bridge.io.out
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
     outer.ght_packet_dest_SRNode.bundle          := ght.io.ght_packet_dest
-    core.io.gh_stall                             := outer.bigcore_hang_in_SKNode.bundle
+    core.io.gh_stall                             := ght.io.core_hang_up
     outer.ghe_event_out_SRNode.bundle            := ghe_bridge.io.out
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
-    ght.io.new_commit                            := core.io.new_commit
-    ght.io.jalr_target                           := core.io.jalr_target
-    ght.io.effective_memaddr                     := core.io.effective_memaddr
+
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
+    for (w <- 0 until 3) { // revisit: core_width: 3
+      ght.io.ght_pcaddr_in(w)                    := core.io.pc(w)
+      ght.io.ght_inst_in(w)                      := core.io.inst(w)
+      ght.io.new_commit(w)                       := core.io.new_commit(w)
+      ght.io.ght_alu_in(w)                       := core.io.alu_out(w)
+      ght.io.jalr_target(w)                      := core.io.jalr_target(w)
+      ght.io.effective_memaddr(w)                := core.io.effective_memaddr(w)
+    }
+    ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
   } else { 
     // Not be used, added to pass the compile
     core.io.gh_stall                             := 0.U
   }
+  //===== GuardianCouncil Function: End   ====//
 
   val ptwPorts         = ListBuffer(lsu.io.ptw, outer.frontend.module.io.ptw, core.io.ptw_tlb)
 

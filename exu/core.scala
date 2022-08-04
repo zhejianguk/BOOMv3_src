@@ -64,14 +64,14 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val trace = Output(Vec(coreParams.retireWidth, new ExtendedTracedInstruction))
     val fcsr_rm = UInt(freechips.rocketchip.tile.FPConstants.RM_SZ.W)
 
-    //===== GuardianCouncil Function: Start ====//
-    val pc = Output(UInt(vaddrBitsExtended.W))
-    val inst = Output(UInt(32.W))
-    val new_commit = Output(UInt(1.W))
     val gh_stall = Input(Bool())
-    val alu_out = Output(UInt(xLen.W))
-    val jalr_target = Output(UInt(xLen.W))
-    val effective_memaddr = Output(UInt(xLen.W))
+    //===== GuardianCouncil Function: Start ====//
+    val pc = Output(Vec(coreWidth, UInt(vaddrBitsExtended.W)))
+    val inst = Output(Vec(coreWidth, UInt(32.W)))
+    val new_commit = Output(Vec(coreWidth, UInt(1.W)))
+    val alu_out = Output(Vec(coreWidth, UInt(xLen.W)))
+    val jalr_target = Output(Vec(coreWidth, UInt(xLen.W)))
+    val effective_memaddr = Output(Vec(coreWidth, UInt(xLen.W)))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -1291,15 +1291,16 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.lxcpt          <> io.lsu.lxcpt
 
   //===== GuardianCouncil Function: Start ====//
-  // Revisit: to make them for multi-issue
   rob.io.gh_effective_alu_out                    := csr_exe_unit.io.gh_effective_alu_out
   rob.io.gh_effective_jalr_target                := csr_exe_unit.io.gh_effective_jalr_target
   rob.io.gh_effective_rob_idx                    := csr_exe_unit.io.gh_effective_rob_idx
   rob.io.gh_effective_valid                      := csr_exe_unit.io.gh_effective_valid
   
-  rob.io.gh_effective_memaddr                    := mem_units(0).io.gh_effective_memaddr
-  rob.io.gh_effective_memaddr_rob_idx            := mem_units(0).io.gh_effective_memaddr_rob_idx
-  rob.io.gh_effective_memaddr_valid              := mem_units(0).io.gh_effective_memaddr_valid
+  for (i <- 0 until memWidth) {
+    rob.io.gh_effective_memaddr(i)               := mem_units(i).io.gh_effective_memaddr
+    rob.io.gh_effective_memaddr_rob_idx(i)       := mem_units(i).io.gh_effective_memaddr_rob_idx
+    rob.io.gh_effective_memaddr_valid(i)         := mem_units(i).io.gh_effective_memaddr_valid
+  }
   //===== GuardianCouncil Function: End   ====//
 
   assert (!(csr.io.singleStep), "[core] single-step is unsupported.")
@@ -1499,11 +1500,13 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   }
 
   //===== GuardianCouncil Function: Start ====//
-  io.pc                                          := rob.io.commit.uops(0).debug_pc(31,0);
-  io.inst                                        := rob.io.commit.uops(0).debug_inst(31,0);
-  io.new_commit                                  := rob.io.commit.arch_valids(0);
-  io.alu_out                                     := rob.io.commit.gh_effective_alu_out(0);
-  io.jalr_target                                 := rob.io.commit.gh_effective_jalr_target(0);
-  io.effective_memaddr                           := rob.io.commit.gh_effective_memaddr(0);
+  for (w <- 0 until coreWidth) {
+    io.pc(w)                                     := rob.io.commit.uops(w).debug_pc(31,0);
+    io.inst(w)                                   := rob.io.commit.uops(w).debug_inst(31,0);
+    io.new_commit(w)                             := rob.io.commit.arch_valids(w);
+    io.alu_out(w)                                := rob.io.commit.gh_effective_alu_out(w);
+    io.jalr_target(w)                            := rob.io.commit.gh_effective_jalr_target(w);
+    io.effective_memaddr(w)                      := rob.io.commit.gh_effective_memaddr(w);
+  }
   //===== GuardianCouncil Function: End ====//
 }

@@ -118,9 +118,9 @@ class RobIo(
   val gh_effective_rob_idx                      = Input(UInt(7.W))    // Revisit: make it is generic
   val gh_effective_valid                        = Input(UInt(1.W))    // Revisit: make it is generic
 
-  val gh_effective_memaddr                      = Input(UInt(xLen.W)) // Revisit: make it is generic
-  val gh_effective_memaddr_rob_idx              = Input(UInt(7.W))    // Revisit: make it is generic
-  val gh_effective_memaddr_valid                = Input(UInt(1.W))    // Revisit: make it is generic
+  val gh_effective_memaddr                      = Input(Vec(memWidth, UInt(xLen.W)))
+  val gh_effective_memaddr_rob_idx              = Input(Vec(memWidth, UInt(7.W)))
+  val gh_effective_memaddr_valid                = Input(Vec(memWidth, UInt(1.W)))
   //===== GuardianCouncil Function: End  ====//
 }
 
@@ -426,22 +426,28 @@ class Rob(
     // Can this instruction commit? (the check for exceptions/rob_state happens later).
     //===== GuardianCouncil Function: Start ====//
     can_commit(w)                                := rob_val(rob_head) && !(rob_bsy(rob_head)) && !io.csr_stall && !io.gh_stall
-    
-    when (io.gh_effective_valid === 1.U) {
-      // Revisit: currently all the same rows using the same gh_effective_alu_out & gh_effective_jalr_target
-      // This is because we are currently using the single-width rob
-      gh_effective_alu_out_reg(io.gh_effective_rob_idx)     := io.gh_effective_alu_out
-      gh_effective_jalr_target_reg(io.gh_effective_rob_idx) := io.gh_effective_jalr_target
-    }
-    io.commit.gh_effective_alu_out(w)        := gh_effective_alu_out_reg (com_idx)
-    io.commit.gh_effective_jalr_target(w)    := gh_effective_jalr_target_reg (com_idx)
 
-    when (io.gh_effective_memaddr_valid === 1.U) {
-      // Revisit: currently all the same rows using the same gh_effective_alu_out & gh_effective_jalr_target
-      // This is because we are currently using the single-width rob
-      gh_effective_memaddr_reg(io.gh_effective_memaddr_rob_idx)     := io.gh_effective_memaddr
+    when ((io.gh_effective_valid === 1.U) && (GetBankIdx(io.gh_effective_rob_idx) === w.U)) {
+      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_alu_out
+      gh_effective_jalr_target_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_jalr_target
     }
-    io.commit.gh_effective_memaddr(w)        := gh_effective_memaddr_reg (com_idx)
+
+    // Note that, a same mem_addr_reg should not be accssed at the same cycle!
+    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U)) {
+      gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
+    } .otherwise {
+      when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U)) {
+        gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
+      }
+    }
+
+
+
+
+    
+    io.commit.gh_effective_alu_out(w)            := gh_effective_alu_out_reg (com_idx)
+    io.commit.gh_effective_jalr_target(w)        := gh_effective_jalr_target_reg (com_idx)
+    io.commit.gh_effective_memaddr(w)            := gh_effective_memaddr_reg (com_idx)
     //===== GuardianCouncil Function: End  ====//
 
     // use the same "com_uop" for both rollback AND commit
