@@ -165,6 +165,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   val ghe_bridge = Module(new GH_Bridge(GH_BridgeParams(3)))
   val ght_cfg_bridge = Module(new GH_Bridge(GH_BridgeParams(32)))
   val ght_cfg_v_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
+  val ght_buffer_status_bridge = Module(new GH_Bridge(GH_BridgeParams(2)))
 
   //===== GuardianCouncil Function: Start ====//
   if (outer.tileParams.hartId == 0) {
@@ -185,7 +186,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
 
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
-    for (w <- 0 until 3) { // revisit: core_width: 3
+    for (w <- 0 until 4) {
       ght.io.ght_pcaddr_in(w)                    := core.io.pc(w)
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
@@ -194,6 +195,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       ght.io.effective_memaddr(w)                := core.io.effective_memaddr(w)
     }
     ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
+    ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status
   } else { 
     // Not be used, added to pass the compile
     core.io.gh_stall                             := 0.U
@@ -248,6 +250,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
         cmdRouter.io.ght_sch_na_in                   := rocc.module.io.ght_sch_na
         rocc.module.io.ght_sch_refresh               := cmdRouter.io.ght_sch_refresh
         cmdRouter.io.ght_sch_dorefresh_in            := rocc.module.io.ght_sch_dorefresh
+        rocc.module.io.ght_buffer_status             := cmdRouter.io.ght_buffer_status
         //===== GuardianCouncil Function: End   ====//
       }
       // Create this FPU just for RoCC
@@ -299,7 +302,8 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     cmdRouter.io.ght_sch_refresh                 := outer.ghe_sch_refresh_in_SKNode.bundle
     // For big_core GHT
     cmdRouter.io.bigcore_comp                    := outer.bigcore_comp_in_SKNode.bundle
-    outer.ght_sch_dorefresh_SRNode.bundle        := cmdRouter.io.ght_sch_dorefresh_out                           
+    outer.ght_sch_dorefresh_SRNode.bundle        := cmdRouter.io.ght_sch_dorefresh_out    
+    cmdRouter.io.ght_buffer_status               := ght_buffer_status_bridge.io.out                     
     //===== GuardianCouncil Function: End   ====//
   }
 

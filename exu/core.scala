@@ -1291,10 +1291,16 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.lxcpt          <> io.lsu.lxcpt
 
   //===== GuardianCouncil Function: Start ====//
-  rob.io.gh_effective_alu_out                    := csr_exe_unit.io.gh_effective_alu_out
-  rob.io.gh_effective_jalr_target                := csr_exe_unit.io.gh_effective_jalr_target
-  rob.io.gh_effective_rob_idx                    := csr_exe_unit.io.gh_effective_rob_idx
-  rob.io.gh_effective_valid                      := csr_exe_unit.io.gh_effective_valid
+  val gh_effective_jalr_target_reg                = RegInit(0.U(xLen.W))
+  gh_effective_jalr_target_reg                   := jmp_unit.io.brinfo.jalr_target
+  // rob.io.gh_effective_alu_out                    := csr_exe_unit.io.gh_effective_alu_out
+  // rob.io.gh_effective_jalr_target                := csr_exe_unit.io.gh_effective_jalr_target
+  // rob.io.gh_effective_rob_idx                    := csr_exe_unit.io.gh_effective_rob_idx
+  // rob.io.gh_effective_valid                      := csr_exe_unit.io.gh_effective_valid
+  rob.io.gh_effective_alu_out                    := jmp_unit.io.iresp.bits.data(63,0)
+  rob.io.gh_effective_rob_idx                    := jmp_unit.io.iresp.bits.uop.rob_idx
+  rob.io.gh_effective_valid                      := jmp_unit.io.iresp.valid
+  rob.io.gh_effective_jalr_target                := gh_effective_jalr_target_reg
   
   for (i <- 0 until memWidth) {
     rob.io.gh_effective_memaddr(i)               := mem_units(i).io.gh_effective_memaddr

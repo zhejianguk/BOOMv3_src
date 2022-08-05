@@ -433,14 +433,23 @@ class Rob(
     }
 
     // Note that, a same mem_addr_reg should not be accssed at the same cycle!
-    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U)) {
+    val conflict                                  = Wire(Bool())
+    conflict                                     := (io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U) && 
+                                                    (io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U) &&
+                                                    ((GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) === (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))))
+    
+    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U) && !conflict) {
       gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
-    } .otherwise {
-      when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U)) {
-        gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
-      }
     }
-
+      
+    when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U) && !conflict) {
+      gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
+    }
+  
+    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U) && conflict) {
+      gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
+    }
+      
 
 
 
