@@ -70,8 +70,6 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val inst = Output(Vec(coreWidth, UInt(32.W)))
     val new_commit = Output(Vec(coreWidth, UInt(1.W)))
     val alu_out = Output(Vec(coreWidth, UInt(xLen.W)))
-    val jalr_target = Output(Vec(coreWidth, UInt(xLen.W)))
-    val effective_memaddr = Output(Vec(coreWidth, UInt(xLen.W)))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -1511,8 +1509,6 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     io.inst(w)                                   := rob.io.commit.uops(w).debug_inst(31,0);
     io.new_commit(w)                             := rob.io.commit.arch_valids(w);
     io.alu_out(w)                                := rob.io.commit.gh_effective_alu_out(w);
-    io.jalr_target(w)                            := rob.io.commit.gh_effective_jalr_target(w);
-    io.effective_memaddr(w)                      := rob.io.commit.gh_effective_memaddr(w);
   }
   //===== GuardianCouncil Function: End ====//
 }

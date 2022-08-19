@@ -191,8 +191,8 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
       ght.io.ght_alu_in(w)                       := core.io.alu_out(w)
-      ght.io.jalr_target(w)                      := core.io.jalr_target(w)
-      ght.io.effective_memaddr(w)                := core.io.effective_memaddr(w)
+      // ght.io.jalr_target(w)                      := core.io.jalr_target(w)
+      // ght.io.effective_memaddr(w)                := core.io.effective_memaddr(w)
     }
     ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
     ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status

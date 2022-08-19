@@ -145,8 +145,6 @@ class CommitSignals(implicit p: Parameters) extends BoomBundle
 
   //===== GuardianCouncil Function: Start ====//
   val gh_effective_alu_out                  = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
-  val gh_effective_jalr_target              = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
-  val gh_effective_memaddr                  = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
   //===== GuardianCouncil Function: End  ====//
 }
 
@@ -334,8 +332,6 @@ class Rob(
 
     //===== GuardianCouncil Function: Start ====//
     val gh_effective_alu_out_reg                  = Reg(Vec(numRobRows, UInt(xLen.W)))
-    val gh_effective_jalr_target_reg              = Reg(Vec(numRobRows, UInt(xLen.W)))
-    val gh_effective_memaddr_reg                  = Reg(Vec(numRobRows, UInt(xLen.W)))
     //===== GuardianCouncil Function: End   ====//
     //-----------------------------------------------
     // Dispatch: Add Entry to ROB
@@ -427,36 +423,32 @@ class Rob(
     //===== GuardianCouncil Function: Start ====//
     can_commit(w)                                := rob_val(rob_head) && !(rob_bsy(rob_head)) && !io.csr_stall && !io.gh_stall
 
-    when ((io.gh_effective_valid === 1.U) && (GetBankIdx(io.gh_effective_rob_idx) === w.U)) {
-      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_alu_out
-      gh_effective_jalr_target_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_jalr_target
+    val inst_ret                                  = Wire(Vec(numRobRows, Bool()))
+    val inst_ret_rvc                              = Wire(Vec(numRobRows, Bool()))
+
+    for (i <- 0 until numRobRows) {
+      inst_ret(i)                                := rob_uop(i).is_jalr && (rob_uop(i).debug_inst(12, 8) === 0x0.U)
+      inst_ret_rvc(i)                            := rob_uop(i).is_rvc && (rob_uop(i).debug_inst(1, 0) === 0x2.U) && (rob_uop(i).debug_inst(15) === 0x1.U) && (rob_uop(i).debug_inst(13, 11) === 0x1.U)
     }
 
     // Note that, a same mem_addr_reg should not be accssed at the same cycle!
-    val conflict                                  = Wire(Bool())
-    conflict                                     := (io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U) && 
-                                                    (io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U) &&
-                                                    ((GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) === (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))))
-    
-    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U) && !conflict) {
-      gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
+    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U)) {
+      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
     }
       
-    when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U) && !conflict) {
-      gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
+    when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U)) {
+      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
     }
-  
-    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U) && conflict) {
-      gh_effective_memaddr_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
+
+    when ((io.gh_effective_valid === 1.U) && (GetBankIdx(io.gh_effective_rob_idx) === w.U)) {
+      when (inst_ret(GetRowIdx(io.gh_effective_rob_idx)) || inst_ret_rvc(GetRowIdx(io.gh_effective_rob_idx))){
+        gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_jalr_target
+      } .otherwise{
+        gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_alu_out
+      }
     }
-      
-
-
-
     
     io.commit.gh_effective_alu_out(w)            := gh_effective_alu_out_reg (com_idx)
-    io.commit.gh_effective_jalr_target(w)        := gh_effective_jalr_target_reg (com_idx)
-    io.commit.gh_effective_memaddr(w)            := gh_effective_memaddr_reg (com_idx)
     //===== GuardianCouncil Function: End  ====//
 
     // use the same "com_uop" for both rollback AND commit
