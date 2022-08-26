@@ -113,14 +113,6 @@ class RobIo(
 
   //===== GuardianCouncil Function: Start ====//
   val gh_stall                                  = Input(Bool())
-  val gh_effective_alu_out                      = Input(UInt(xLen.W)) // Revisit: make it is generic
-  val gh_effective_jalr_target                  = Input(UInt(xLen.W)) // Revisit: make it is generic
-  val gh_effective_rob_idx                      = Input(UInt(7.W))    // Revisit: make it is generic
-  val gh_effective_valid                        = Input(UInt(1.W))    // Revisit: make it is generic
-
-  val gh_effective_memaddr                      = Input(Vec(memWidth, UInt(xLen.W)))
-  val gh_effective_memaddr_rob_idx              = Input(Vec(memWidth, UInt(7.W)))
-  val gh_effective_memaddr_valid                = Input(Vec(memWidth, UInt(1.W)))
   //===== GuardianCouncil Function: End  ====//
 }
 
@@ -142,10 +134,6 @@ class CommitSignals(implicit p: Parameters) extends BoomBundle
   val rollback   = Bool()
 
   val debug_wdata = Vec(retireWidth, UInt(xLen.W))
-
-  //===== GuardianCouncil Function: Start ====//
-  val gh_effective_alu_out                  = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
-  //===== GuardianCouncil Function: End  ====//
 }
 
 /**
@@ -329,10 +317,6 @@ class Rob(
     val rob_fflags    = Mem(numRobRows, Bits(freechips.rocketchip.tile.FPConstants.FLAGS_SZ.W))
 
     val rob_debug_wdata = Mem(numRobRows, UInt(xLen.W))
-
-    //===== GuardianCouncil Function: Start ====//
-    val gh_effective_alu_out_reg                  = Reg(Vec(numRobRows, UInt(xLen.W)))
-    //===== GuardianCouncil Function: End   ====//
     //-----------------------------------------------
     // Dispatch: Add Entry to ROB
 
@@ -422,33 +406,6 @@ class Rob(
     // Can this instruction commit? (the check for exceptions/rob_state happens later).
     //===== GuardianCouncil Function: Start ====//
     can_commit(w)                                := rob_val(rob_head) && !(rob_bsy(rob_head)) && !io.csr_stall && !io.gh_stall
-
-    val inst_ret                                  = Wire(Vec(numRobRows, Bool()))
-    val inst_ret_rvc                              = Wire(Vec(numRobRows, Bool()))
-
-    for (i <- 0 until numRobRows) {
-      inst_ret(i)                                := rob_uop(i).is_jalr && (rob_uop(i).debug_inst(12, 8) === 0x0.U)
-      inst_ret_rvc(i)                            := rob_uop(i).is_rvc && (rob_uop(i).debug_inst(1, 0) === 0x2.U) && (rob_uop(i).debug_inst(15) === 0x1.U) && (rob_uop(i).debug_inst(13, 11) === 0x1.U)
-    }
-
-    // Note that, a same mem_addr_reg should not be accssed at the same cycle!
-    when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U)) {
-      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
-    }
-      
-    when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U)) {
-      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
-    }
-
-    when ((io.gh_effective_valid === 1.U) && (GetBankIdx(io.gh_effective_rob_idx) === w.U)) {
-      when (inst_ret(GetRowIdx(io.gh_effective_rob_idx)) || inst_ret_rvc(GetRowIdx(io.gh_effective_rob_idx))){
-        gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_jalr_target
-      } .otherwise{
-        gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_alu_out
-      }
-    }
-    
-    io.commit.gh_effective_alu_out(w)            := gh_effective_alu_out_reg (com_idx)
     //===== GuardianCouncil Function: End  ====//
 
     // use the same "com_uop" for both rollback AND commit

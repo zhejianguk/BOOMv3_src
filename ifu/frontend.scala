@@ -288,6 +288,15 @@ class BoomFrontendIO(implicit p: Parameters) extends BoomBundle
   val perf = Input(new FrontendPerfEvents)
 }
 
+
+//===== GuardianCouncil Function: Start ====//
+class BoomGHIO(implicit p: Parameters) extends BoomBundle
+{
+  val gh_ftq_idx                                = Input(Vec(coreWidth, UInt(log2Ceil(ftqSz).W)))
+  val jal_or_jlar_target                        = Output(Vec(coreWidth, UInt(vaddrBitsExtended.W)))
+}
+//===== GuardianCouncil Function: End ====//
+
 /**
  * Top level Frontend class
  *
@@ -313,6 +322,11 @@ class BoomFrontendBundle(val outer: BoomFrontend) extends CoreBundle()(outer.p)
   val cpu = Flipped(new BoomFrontendIO())
   val ptw = new TLBPTWIO()
   val errors = new ICacheErrors
+
+  //===== GuardianCouncil Function: Start ====//
+  val gh = new BoomGHIO()
+  //===== GuardianCouncil Function: End ====//
+
 }
 
 /**
@@ -988,4 +1002,14 @@ class BoomFrontendModule(outer: BoomFrontend) extends LazyModuleImp(outer)
   override def toString: String =
     (BoomCoreStringPrefix("====Overall Frontend Params====") + "\n"
     + icache.toString + bpd.toString)
+
+  //===== GuardianCouncil Function: Start ====//
+  ftq.io.gh_redirect_pc                          := io.cpu.redirect_pc
+
+
+  for (i <- 0 until coreWidth) {
+    io.gh.jal_or_jlar_target(i)                  := ftq.io.jal_or_jlar_target(i)
+    ftq.io.gh_ftq_idx(i)                         := io.gh.gh_ftq_idx(i)
+  }
+  //===== GuardianCouncil Function: End ====//
 }

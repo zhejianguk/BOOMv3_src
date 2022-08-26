@@ -128,7 +128,11 @@ class FetchTargetQueue(implicit p: Parameters) extends BoomModule
     val ras_update = Output(Bool())
     val ras_update_idx = Output(UInt(log2Ceil(nRasEntries).W))
     val ras_update_pc  = Output(UInt(vaddrBitsExtended.W))
-
+    //===== GuardianCouncil Function: Start ====//
+    val gh_ftq_idx                                = Input(Vec(coreWidth, UInt(log2Ceil(ftqSz).W)))
+    val jal_or_jlar_target                        = Output(Vec(coreWidth, UInt(vaddrBitsExtended.W)))
+    val gh_redirect_pc                            = Input(UInt(vaddrBitsExtended.W))
+    //===== GuardianCouncil Function: End ====//
   })
   val bpd_ptr    = RegInit(0.U(idx_sz.W))
   val deq_ptr    = RegInit(0.U(idx_sz.W))
@@ -362,4 +366,42 @@ class FetchTargetQueue(implicit p: Parameters) extends BoomModule
   for (w <- 0 until coreWidth) {
     io.debug_fetch_pc(w) := RegNext(pcs(io.debug_ftq_idx(w)))
   }
+
+  //===== GuardianCouncil Function: Start ====//
+  val gh_mispredict                                = Wire(Vec(coreWidth, Bool()))
+  val gh_mispredict_ooo                            = Wire(Vec(coreWidth, Bool()))
+  val gh_ptr                                       = Wire(Vec(coreWidth, UInt(log2Ceil(ftqSz).W)))
+  val gh_mispredict_ooo_idx                        = RegInit((ftqSz+1).U(log2Ceil(ftqSz+1).W))
+  val gh_mispredict_ooo_val                        = RegInit(0.U(vaddrBitsExtended.W))
+
+  
+
+  when ((io.brupdate.b2.mispredict) && (io.redirect.valid)){
+    gh_mispredict_ooo_idx                         := Mux((io.deq.valid && (io.deq.bits === io.redirect.bits)), (ftqSz+1).U, io.redirect.bits)
+    gh_mispredict_ooo_val                         := Mux((io.deq.valid && (io.deq.bits === io.redirect.bits)), 0.U, io.gh_redirect_pc)
+  } .otherwise {
+    when (io.deq.valid && (io.deq.bits === gh_mispredict_ooo_idx)){
+      gh_mispredict_ooo_idx                       := (ftqSz+1).U
+      gh_mispredict_ooo_val                       := 0.U
+    } .otherwise {
+      gh_mispredict_ooo_idx                       := gh_mispredict_ooo_idx
+      gh_mispredict_ooo_val                       := gh_mispredict_ooo_val
+    }
+  }
+
+  for (i <- 0 until coreWidth) {
+    gh_mispredict(i)                              := (io.brupdate.b2.mispredict) && (io.gh_ftq_idx(i) === io.redirect.bits) && (io.redirect.valid)
+    gh_mispredict_ooo(i)                          := io.gh_ftq_idx(i) === gh_mispredict_ooo_idx
+    gh_ptr(i)                                     := Mux(io.gh_ftq_idx(i) === (ftqSz-1).U, 0.U, io.gh_ftq_idx(i) + 1.U)
+  }
+
+  for (i <- 0 until coreWidth) {
+    io.jal_or_jlar_target(i)                      := MuxCase(pcs(gh_ptr(i)), 
+                                                     Array((gh_mispredict(i) === true.B) -> io.gh_redirect_pc,
+                                                           (gh_mispredict_ooo(i) === true.B) -> gh_mispredict_ooo_val,
+                                                           ((gh_mispredict(i) === false.B) && (gh_mispredict_ooo(i) === false.B)) -> pcs(gh_ptr(i))
+                                                           )
+                                                          )
+  }
+  //===== GuardianCouncil Function: End ====//
 }

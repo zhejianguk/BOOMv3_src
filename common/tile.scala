@@ -6,7 +6,7 @@
 package boom.common
 
 import chisel3._
-import chisel3.util.{RRArbiter, Queue}
+import chisel3.util._
 
 import scala.collection.mutable.{ListBuffer}
 
@@ -170,11 +170,11 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   //===== GuardianCouncil Function: Start ====//
   if (outer.tileParams.hartId == 0) {
     println("#### Jessica #### Generating GHT for the big core, HartID: ", outer.boomParams.hartId, "...!!!")
-    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128, 4)))   // revisit: set 32 as the total number of checkers.
-                                                                                           // revisit: total types of insts is 32
-                                                                                           // revisit: total number of SEs is 16 
-                                                                                           // revisit: packet size: 128 bits
-                                                                                           // revisit: core_width: 4
+    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128, 4, true)))   // revisit: set 32 as the total number of checkers.
+                                                                                                  // revisit: total types of insts is 32
+                                                                                                  // revisit: total number of SEs is 16 
+                                                                                                  // revisit: packet size: 128 bits
+                                                                                                  // revisit: core_width: 4
 
     ght.io.ght_mask_in                           := ght_bridge.io.out
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
@@ -190,9 +190,14 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       ght.io.ght_pcaddr_in(w)                    := core.io.pc(w)
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
-      ght.io.ght_alu_in(w)                       := core.io.alu_out(w)
-      // ght.io.jalr_target(w)                      := core.io.jalr_target(w)
-      // ght.io.effective_memaddr(w)                := core.io.effective_memaddr(w)
+      ght.io.ght_alu_in(w)                       := MuxCase(0.U, 
+                                                      Array((core.io.uses_ldq(w) === true.B) -> lsu.io.ldq_head_addr,
+                                                            (core.io.uses_stq(w) === true.B) -> lsu.io.stq_head_addr,
+                                                            (core.io.is_jal_or_jalr(w) === true.B) -> outer.frontend.module.io.gh.jal_or_jlar_target(w)
+                                                           )
+                                                           )
+      ght.io.ght_prfs_rd(w)                      := core.io.prf_rd(w)
+      outer.frontend.module.io.gh.gh_ftq_idx(w)  := Mux((core.io.is_jal_or_jalr(w) === true.B), core.io.ft_idx(w), 0.U)
     }
     ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
     ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status

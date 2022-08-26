@@ -69,7 +69,11 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val pc = Output(Vec(coreWidth, UInt(vaddrBitsExtended.W)))
     val inst = Output(Vec(coreWidth, UInt(32.W)))
     val new_commit = Output(Vec(coreWidth, UInt(1.W)))
-    val alu_out = Output(Vec(coreWidth, UInt(xLen.W)))
+    val prf_rd = Output(Vec(coreWidth, UInt(xLen.W)))
+    val uses_ldq = Output(Vec(coreWidth, UInt(1.W)))
+    val uses_stq = Output(Vec(coreWidth, UInt(1.W)))
+    val is_jal_or_jalr = Output(Vec(coreWidth, UInt(1.W)))
+    val ft_idx = Output(Vec(coreWidth, UInt(log2Ceil(ftqSz).W)))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -118,12 +122,15 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   val issue_units      = Seq(mem_iss_unit, int_iss_unit)
   val dispatcher       = Module(new BasicDispatcher)
 
+  //===== GuardianCouncil Function: Start ====//
   val iregfile         = Module(new RegisterFileSynthesizable(
                              numIntPhysRegs,
-                             numIrfReadPorts,
+                             numIrfReadPorts + 4, // additional ports for GH_Subsystem
                              numIrfWritePorts,
                              xLen,
                              Seq.fill(memWidth) {true} ++ exe_units.bypassable_write_port_mask)) // bypassable ll_wb
+  //===== GuardianCouncil Function: End  ====//
+  
   val pregfile         = Module(new RegisterFileSynthesizable(
                             ftqSz,
                             exe_units.numIrfReaders,
@@ -972,8 +979,17 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   //-------------------------------------------------------------
   //-------------------------------------------------------------
 
+  //===== GuardianCouncil Function: Start ====//
   // Register Read <- Issue (rrd <- iss)
-  iregister_read.io.rf_read_ports <> iregfile.io.read_ports
+  for (i <- 0 until numIrfReadPorts) {
+    iregister_read.io.rf_read_ports(i) <> iregfile.io.read_ports(i)
+  }
+  for (w <- 0 until coreWidth) {
+    iregfile.io.read_ports(numIrfReadPorts+w).addr := rob.io.commit.uops(w).pdst;
+  }
+  //===== GuardianCouncil Function: End ====//
+
+
   iregister_read.io.prf_read_ports := DontCare
   if (enableSFBOpt) {
     iregister_read.io.prf_read_ports <> pregfile.io.read_ports
@@ -1287,26 +1303,6 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.lsu_clr_bsy    := io.lsu.clr_bsy
   rob.io.lsu_clr_unsafe := io.lsu.clr_unsafe
   rob.io.lxcpt          <> io.lsu.lxcpt
-
-  //===== GuardianCouncil Function: Start ====//
-  val gh_effective_jalr_target_reg                = RegInit(0.U(xLen.W))
-  gh_effective_jalr_target_reg                   := jmp_unit.io.brinfo.jalr_target
-  // rob.io.gh_effective_alu_out                    := csr_exe_unit.io.gh_effective_alu_out
-  // rob.io.gh_effective_jalr_target                := csr_exe_unit.io.gh_effective_jalr_target
-  // rob.io.gh_effective_rob_idx                    := csr_exe_unit.io.gh_effective_rob_idx
-  // rob.io.gh_effective_valid                      := csr_exe_unit.io.gh_effective_valid
-  rob.io.gh_effective_alu_out                    := jmp_unit.io.iresp.bits.data(63,0)
-  rob.io.gh_effective_rob_idx                    := jmp_unit.io.iresp.bits.uop.rob_idx
-  rob.io.gh_effective_valid                      := jmp_unit.io.iresp.valid
-  rob.io.gh_effective_jalr_target                := gh_effective_jalr_target_reg
-  
-  for (i <- 0 until memWidth) {
-    rob.io.gh_effective_memaddr(i)               := mem_units(i).io.gh_effective_memaddr
-    rob.io.gh_effective_memaddr_rob_idx(i)       := mem_units(i).io.gh_effective_memaddr_rob_idx
-    rob.io.gh_effective_memaddr_valid(i)         := mem_units(i).io.gh_effective_memaddr_valid
-  }
-  //===== GuardianCouncil Function: End   ====//
-
   assert (!(csr.io.singleStep), "[core] single-step is unsupported.")
 
 
@@ -1504,11 +1500,21 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   }
 
   //===== GuardianCouncil Function: Start ====//
+  val gh_effective_jalr_target_reg                = RegInit(0.U(xLen.W))
+  when (jmp_unit.io.brinfo.valid){
+    gh_effective_jalr_target_reg                 := jmp_unit.io.brinfo.jalr_target
+  }
+
   for (w <- 0 until coreWidth) {
-    io.pc(w)                                     := rob.io.commit.uops(w).debug_pc(31,0);
-    io.inst(w)                                   := rob.io.commit.uops(w).debug_inst(31,0);
-    io.new_commit(w)                             := rob.io.commit.arch_valids(w);
-    io.alu_out(w)                                := rob.io.commit.gh_effective_alu_out(w);
+    io.pc(w)                                     := rob.io.commit.uops(w).debug_pc(31,0)
+    io.inst(w)                                   := rob.io.commit.uops(w).debug_inst(31,0)
+    io.new_commit(w)                             := rob.io.commit.arch_valids(w)
+    io.prf_rd(w)                                 := iregfile.io.read_ports(numIrfReadPorts + w).data
+    
+    io.uses_ldq(w)                               := rob.io.commit.uops(w).uses_ldq
+    io.uses_stq(w)                               := rob.io.commit.uops(w).uses_stq
+    io.is_jal_or_jalr(w)                         := rob.io.commit.uops(w).is_jal|rob.io.commit.uops(w).is_jalr
+    io.ft_idx(w)                                 := rob.io.commit.uops(w).ftq_idx
   }
   //===== GuardianCouncil Function: End ====//
 }

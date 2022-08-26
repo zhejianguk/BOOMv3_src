@@ -160,6 +160,11 @@ class LSUCoreIO(implicit p: Parameters) extends BoomBundle()(p)
 
 class LSUIO(implicit p: Parameters, edge: TLEdgeOut) extends BoomBundle()(p)
 {
+  //===== GuardianCouncil Function: Start ====//
+  val ldq_head_addr                               = Output(UInt(xLen.W))
+  val stq_head_addr                               = Output(UInt(xLen.W))
+  //===== GuardianCouncil Function: End ====//
+
   val ptw   = new rocket.TLBPTWIO
   val core  = new LSUCoreIO
   val dmem  = new LSUDMemIO
@@ -1647,7 +1652,10 @@ class LSU(implicit p: Parameters, edge: TLEdgeOut) extends BoomModule()(p)
                     ~(st_brkilled_mask.asUInt) &
                     ~(st_exc_killed_mask.asUInt)
 
-
+  //===== GuardianCouncil Function: Start ====//
+  io.ldq_head_addr                              := ldq(ldq_head).bits.addr.bits
+  io.stq_head_addr                              := stq(stq_commit_head).bits.addr.bits
+  //===== GuardianCouncil Function: End ====//
 }
 
 /**
