@@ -170,11 +170,11 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   //===== GuardianCouncil Function: Start ====//
   if (outer.tileParams.hartId == 0) {
     println("#### Jessica #### Generating GHT for the big core, HartID: ", outer.boomParams.hartId, "...!!!")
-    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128, 4)))   // revisit: set 32 as the total number of checkers.
-                                                                                           // revisit: total types of insts is 32
-                                                                                           // revisit: total number of SEs is 16 
-                                                                                           // revisit: packet size: 128 bits
-                                                                                           // revisit: core_width: 4
+    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128, 4, false)))   // revisit: set 32 as the total number of checkers.
+                                                                                                  // revisit: total types of insts is 32
+                                                                                                  // revisit: total number of SEs is 16 
+                                                                                                  // revisit: packet size: 128 bits
+                                                                                                  // revisit: core_width: 4
 
     ght.io.ght_mask_in                           := ght_bridge.io.out
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
@@ -191,8 +191,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
       ght.io.ght_alu_in(w)                       := core.io.alu_out(w)
-      // ght.io.jalr_target(w)                      := core.io.jalr_target(w)
-      // ght.io.effective_memaddr(w)                := core.io.effective_memaddr(w)
+      ght.io.ght_prfs_rd(w)                      := 0.U // not used 
     }
     ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
     ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status
