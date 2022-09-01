@@ -395,13 +395,16 @@ class FetchTargetQueue(implicit p: Parameters) extends BoomModule
     gh_ptr(i)                                     := Mux(io.gh_ftq_idx(i) === (ftqSz-1).U, 0.U, io.gh_ftq_idx(i) + 1.U)
   }
 
+  val jal_or_jlar_target_reg                       = Reg(Vec(coreWidth, UInt(vaddrBitsExtended.W)))
+
   for (i <- 0 until coreWidth) {
-    io.jal_or_jlar_target(i)                      := MuxCase(pcs(gh_ptr(i)), 
+    jal_or_jlar_target_reg(i)                     := MuxCase(pcs(gh_ptr(i)), 
                                                      Array((gh_mispredict(i) === true.B) -> io.gh_redirect_pc,
                                                            (gh_mispredict_ooo(i) === true.B) -> gh_mispredict_ooo_val,
                                                            ((gh_mispredict(i) === false.B) && (gh_mispredict_ooo(i) === false.B)) -> pcs(gh_ptr(i))
                                                            )
                                                           )
+    io.jal_or_jlar_target(i)                      := jal_or_jlar_target_reg(i)
   }
   //===== GuardianCouncil Function: End ====//
 }

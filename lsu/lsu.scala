@@ -1653,8 +1653,14 @@ class LSU(implicit p: Parameters, edge: TLEdgeOut) extends BoomModule()(p)
                     ~(st_exc_killed_mask.asUInt)
 
   //===== GuardianCouncil Function: Start ====//
-  io.ldq_head_addr                              := ldq(ldq_head).bits.addr.bits
-  io.stq_head_addr                              := stq(stq_commit_head).bits.addr.bits
+  val ldq_head_addr_delay                        = RegInit(0.U(xLen.W))
+  val stq_head_addr_delay                        = RegInit(0.U(xLen.W))
+
+  ldq_head_addr_delay                           := ldq(ldq_head).bits.addr.bits
+  stq_head_addr_delay                           := stq(stq_commit_head).bits.addr.bits
+
+  io.ldq_head_addr                              := ldq_head_addr_delay
+  io.stq_head_addr                              := stq_head_addr_delay
   //===== GuardianCouncil Function: End ====//
 }
 

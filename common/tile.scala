@@ -191,11 +191,12 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
       ght.io.ght_alu_in(w)                       := MuxCase(0.U, 
-                                                      Array((core.io.uses_ldq(w) === true.B) -> lsu.io.ldq_head_addr,
-                                                            (core.io.uses_stq(w) === true.B) -> lsu.io.stq_head_addr,
-                                                            (core.io.is_jal_or_jalr(w) === true.B) -> outer.frontend.module.io.gh.jal_or_jlar_target(w)
+                                                      Array((ght.io.ght_prfs_forward_ldq(w) === true.B) -> lsu.io.ldq_head_addr,
+                                                            (ght.io.ght_prfs_forward_stq(w) === true.B) -> lsu.io.stq_head_addr,
+                                                            (ght.io.ght_prfs_forward_ftq(w) === true.B) -> outer.frontend.module.io.gh.jal_or_jlar_target(w)
                                                            )
                                                            )
+      core.io.ght_prfs_forward_prf(w)            := ght.io.ght_prfs_forward_prf(w)
       ght.io.ght_prfs_rd(w)                      := core.io.prf_rd(w)
       outer.frontend.module.io.gh.gh_ftq_idx(w)  := Mux((core.io.is_jal_or_jalr(w) === true.B), core.io.ft_idx(w), 0.U)
     }

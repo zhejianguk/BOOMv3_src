@@ -74,6 +74,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val uses_stq = Output(Vec(coreWidth, UInt(1.W)))
     val is_jal_or_jalr = Output(Vec(coreWidth, UInt(1.W)))
     val ft_idx = Output(Vec(coreWidth, UInt(log2Ceil(ftqSz).W)))
+    val ght_prfs_forward_prf = Input(Vec(coreWidth, Bool()))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -984,8 +985,12 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   for (i <- 0 until numIrfReadPorts) {
     iregister_read.io.rf_read_ports(i) <> iregfile.io.read_ports(i)
   }
+
+  val rob_io_commit_uops_pdst_reg                   = Reg(Vec(coreWidth, UInt(maxPregSz.W)))
+  
   for (w <- 0 until coreWidth) {
-    iregfile.io.read_ports(numIrfReadPorts+w).addr := rob.io.commit.uops(w).pdst;
+    rob_io_commit_uops_pdst_reg(w)                 := rob.io.commit.uops(w).pdst
+    iregfile.io.read_ports(numIrfReadPorts+w).addr := Mux(io.ght_prfs_forward_prf(w) === true.B, rob_io_commit_uops_pdst_reg(w), 0.U)
   }
   //===== GuardianCouncil Function: End ====//
 
@@ -1501,15 +1506,19 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
 
   //===== GuardianCouncil Function: Start ====//
   val gh_effective_jalr_target_reg                = RegInit(0.U(xLen.W))
+  val ght_prfs_forward_prf_reg                    = Reg(Vec(coreWidth, Bool()))
+
   when (jmp_unit.io.brinfo.valid){
     gh_effective_jalr_target_reg                 := jmp_unit.io.brinfo.jalr_target
   }
 
   for (w <- 0 until coreWidth) {
+    ght_prfs_forward_prf_reg(w)                  := io.ght_prfs_forward_prf(w)
+
     io.pc(w)                                     := rob.io.commit.uops(w).debug_pc(31,0)
     io.inst(w)                                   := rob.io.commit.uops(w).debug_inst(31,0)
     io.new_commit(w)                             := rob.io.commit.arch_valids(w)
-    io.prf_rd(w)                                 := iregfile.io.read_ports(numIrfReadPorts + w).data
+    io.prf_rd(w)                                 := Mux(ght_prfs_forward_prf_reg(w) === true.B, iregfile.io.read_ports(numIrfReadPorts + w).data, 0.U)
     
     io.uses_ldq(w)                               := rob.io.commit.uops(w).uses_ldq
     io.uses_stq(w)                               := rob.io.commit.uops(w).uses_stq
