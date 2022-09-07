@@ -380,7 +380,7 @@ class FetchTargetQueue(implicit p: Parameters) extends BoomModule
     gh_mispredict_ooo_idx                         := Mux((io.deq.valid && (io.deq.bits === io.redirect.bits)), (ftqSz+1).U, io.redirect.bits)
     gh_mispredict_ooo_val                         := Mux((io.deq.valid && (io.deq.bits === io.redirect.bits)), 0.U, io.gh_redirect_pc)
   } .otherwise {
-    when (io.deq.valid && (io.deq.bits === gh_mispredict_ooo_idx)){
+    when (io.deq.valid && (deq_ptr === gh_mispredict_ooo_idx)){
       gh_mispredict_ooo_idx                       := (ftqSz+1).U
       gh_mispredict_ooo_val                       := 0.U
     } .otherwise {
