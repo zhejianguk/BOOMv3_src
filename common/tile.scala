@@ -170,9 +170,9 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   //===== GuardianCouncil Function: Start ====//
   if (outer.tileParams.hartId == 0) {
     println("#### Jessica #### Generating GHT for the big core, HartID: ", outer.boomParams.hartId, "...!!!")
-    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 16, 128, 4, true)))   // revisit: set 32 as the total number of checkers.
+    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 8, 128, 4, true)))   // revisit: set 32 as the total number of checkers.
                                                                                                   // revisit: total types of insts is 32
-                                                                                                  // revisit: total number of SEs is 16 
+                                                                                                  // revisit: total number of SEs is 8 
                                                                                                   // revisit: packet size: 128 bits
                                                                                                   // revisit: core_width: 4
 
