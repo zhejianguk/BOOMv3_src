@@ -126,7 +126,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   //===== GuardianCouncil Function: Start ====//
   val iregfile         = Module(new RegisterFileSynthesizable(
                              numIntPhysRegs,
-                             numIrfReadPorts + 4, // additional ports for GH_Subsystem
+                             numIrfReadPorts + coreWidth, // additional ports for GH_Subsystem
                              numIrfWritePorts,
                              xLen,
                              Seq.fill(memWidth) {true} ++ exe_units.bypassable_write_port_mask)) // bypassable ll_wb

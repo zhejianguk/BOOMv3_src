@@ -168,13 +168,13 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   val ght_buffer_status_bridge = Module(new GH_Bridge(GH_BridgeParams(2)))
 
   //===== GuardianCouncil Function: Start ====//
+  val gc_core_width                               = 3 // revisit: make it is generic
   if (outer.tileParams.hartId == 0) {
     println("#### Jessica #### Generating GHT for the big core, HartID: ", outer.boomParams.hartId, "...!!!")
-    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 8, 128, 4, true)))   // revisit: set 32 as the total number of checkers.
-                                                                                                  // revisit: total types of insts is 32
-                                                                                                  // revisit: total number of SEs is 8 
-                                                                                                  // revisit: packet size: 128 bits
-                                                                                                  // revisit: core_width: 4
+    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 8, 128, gc_core_width, true)))     // revisit: set 32 as the total number of checkers.
+                                                                                                              // revisit: total types of insts is 32
+                                                                                                              // revisit: total number of SEs is 8 
+                                                                                                              // revisit: packet size: 128 bits
 
     ght.io.ght_mask_in                           := ght_bridge.io.out
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
@@ -186,7 +186,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
 
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
-    for (w <- 0 until 4) {
+    for (w <- 0 until gc_core_width) {
       ght.io.ght_pcaddr_in(w)                    := core.io.pc(w)
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
