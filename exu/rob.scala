@@ -432,12 +432,20 @@ class Rob(
     }
 
     // Note that, a same mem_addr_reg should not be accssed at the same cycle!
+    /*
     when ((io.gh_effective_memaddr_valid (0) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(0)) === w.U)) {
       gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(0))) := io.gh_effective_memaddr(0)
     }
       
     when ((io.gh_effective_memaddr_valid (1) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(1)) === w.U)) {
       gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(1))) := io.gh_effective_memaddr(1)
+    }
+    */
+    
+    for (i <- 0 until memWidth) {
+      when ((io.gh_effective_memaddr_valid (i) === 1.U) && (GetBankIdx(io.gh_effective_memaddr_rob_idx(i)) === w.U)) {
+      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_memaddr_rob_idx(i))) := io.gh_effective_memaddr(i)
+      }
     }
 
     when ((io.gh_effective_valid === 1.U) && (GetBankIdx(io.gh_effective_rob_idx) === w.U)) {
