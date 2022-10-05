@@ -75,6 +75,8 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val is_jal_or_jalr = Output(Vec(coreWidth, UInt(1.W)))
     val ft_idx = Output(Vec(coreWidth, UInt(log2Ceil(ftqSz).W)))
     val ght_prfs_forward_prf = Input(Vec(coreWidth, Bool()))
+    val alu_out = Output(Vec(coreWidth, UInt(xLen.W)))
+    val ght_prv = Output(UInt(2.W))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -1529,5 +1531,6 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     io.is_jal_or_jalr(w)                         := rob.io.commit.uops(w).is_jal|rob.io.commit.uops(w).is_jalr
     io.ft_idx(w)                                 := rob.io.commit.uops(w).ftq_idx
   }
+  io.ght_prv                                     := csr.io.status.prv
   //===== GuardianCouncil Function: End ====//
 }
