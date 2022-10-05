@@ -166,6 +166,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   val ght_cfg_bridge = Module(new GH_Bridge(GH_BridgeParams(32)))
   val ght_cfg_v_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
   val ght_buffer_status_bridge = Module(new GH_Bridge(GH_BridgeParams(2)))
+  val if_correct_process_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
 
   //===== GuardianCouncil Function: Start ====//
   val gh_core_width                               = outer.boomParams.core.decodeWidth
@@ -176,7 +177,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
                                                                                                               // revisit: total number of SEs is 8 
                                                                                                               // revisit: packet size: 128 bits
 
-    ght.io.ght_mask_in                           := ght_bridge.io.out
+    ght.io.ght_mask_in                           := ght_bridge.io.out & (!if_correct_process_bridge.io.out)
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
@@ -253,6 +254,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
 
         rocc.module.io.ght_satp_ppn                  := cmdRouter.io.ght_satp_ppn
         rocc.module.io.ght_sys_mode                  := cmdRouter.io.ght_sys_mode
+        cmdRouter.io.if_correct_process_in           := rocc.module.io.if_correct_process
         //===== GuardianCouncil Function: End   ====//
       }
       // Create this FPU just for RoCC
@@ -309,6 +311,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     
     cmdRouter.io.ght_satp_ppn                    := core.io.ptw.ptbr.ppn
     cmdRouter.io.ght_sys_mode                    := core.io.ght_prv
+    if_correct_process_bridge.io.in              := cmdRouter.io.if_correct_process_out
     //===== GuardianCouncil Function: End   ====//
   }
 
