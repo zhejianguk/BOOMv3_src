@@ -70,6 +70,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     val inst = Output(Vec(coreWidth, UInt(32.W)))
     val new_commit = Output(Vec(coreWidth, UInt(1.W)))
     val alu_out = Output(Vec(coreWidth, UInt(xLen.W)))
+    val ght_prv = Output(UInt(2.W))
     //===== GuardianCouncil Function: End ====//
   }
   //**********************************
@@ -1514,5 +1515,6 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     io.new_commit(w)                             := rob.io.commit.arch_valids(w);
     io.alu_out(w)                                := rob.io.commit.gh_effective_alu_out(w);
   }
+  io.ght_prv                                     := csr.io.status.prv
   //===== GuardianCouncil Function: End ====//
 }

@@ -250,6 +250,9 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
         rocc.module.io.ght_sch_refresh               := cmdRouter.io.ght_sch_refresh
         cmdRouter.io.ght_sch_dorefresh_in            := rocc.module.io.ght_sch_dorefresh
         rocc.module.io.ght_buffer_status             := cmdRouter.io.ght_buffer_status
+
+        rocc.module.io.ght_satp_ppn                  := cmdRouter.io.ght_satp_ppn
+        rocc.module.io.ght_sys_mode                  := cmdRouter.io.ght_sys_mode
         //===== GuardianCouncil Function: End   ====//
       }
       // Create this FPU just for RoCC
@@ -302,7 +305,10 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     // For big_core GHT
     cmdRouter.io.bigcore_comp                    := outer.bigcore_comp_in_SKNode.bundle
     outer.ght_sch_dorefresh_SRNode.bundle        := cmdRouter.io.ght_sch_dorefresh_out    
-    cmdRouter.io.ght_buffer_status               := ght_buffer_status_bridge.io.out                     
+    cmdRouter.io.ght_buffer_status               := ght_buffer_status_bridge.io.out
+    
+    cmdRouter.io.ght_satp_ppn                    := core.io.ptw.ptbr.ppn
+    cmdRouter.io.ght_sys_mode                    := core.io.ght_prv
     //===== GuardianCouncil Function: End   ====//
   }
 
