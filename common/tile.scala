@@ -177,7 +177,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
                                                                                                               // revisit: total number of SEs is 8 
                                                                                                               // revisit: packet size: 128 bits
 
-    ght.io.ght_mask_in                           := ght_bridge.io.out & (!if_correct_process_bridge.io.out)
+    ght.io.ght_mask_in                           := ght_bridge.io.out | (!if_correct_process_bridge.io.out)
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
