@@ -167,6 +167,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   val ght_cfg_v_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
   val ght_buffer_status_bridge = Module(new GH_Bridge(GH_BridgeParams(2)))
   val if_correct_process_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
+  val if_ght_filters_empty_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
 
   //===== GuardianCouncil Function: Start ====//
   val gc_core_width                               = outer.boomParams.core.decodeWidth
@@ -185,6 +186,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     core.io.gh_stall                             := ght.io.core_hang_up
     outer.ghe_event_out_SRNode.bundle            := ghe_bridge.io.out
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
+    if_ght_filters_empty_bridge.io.in            := ght.io.ght_filters_empty
 
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
     for (w <- 0 until gc_core_width) {
@@ -253,7 +255,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
 
         cmdRouter.io.agg_packet_in                   := rocc.module.io.agg_packet_out
         rocc.module.io.agg_buffer_full               := cmdRouter.io.agg_buffer_full
-        cmdRouter.io.agg_core_full_in                := rocc.module.io.agg_core_full
+        cmdRouter.io.agg_core_status_in              := rocc.module.io.agg_core_status
         cmdRouter.io.ght_sch_na_in                   := rocc.module.io.ght_sch_na
         rocc.module.io.ght_sch_refresh               := cmdRouter.io.ght_sch_refresh
         cmdRouter.io.ght_sch_dorefresh_in            := rocc.module.io.ght_sch_dorefresh
@@ -303,12 +305,12 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght_bridge.io.in                             := cmdRouter.io.ght_mask_out
     ght_cfg_bridge.io.in                         := cmdRouter.io.ght_cfg_out
     ght_cfg_v_bridge.io.in                       := cmdRouter.io.ght_cfg_valid
-    outer.ght_status_out_SRNode.bundle           := cmdRouter.io.ght_status_out
+    outer.ght_status_out_SRNode.bundle           := Cat(if_ght_filters_empty_bridge.io.out, cmdRouter.io.ght_status_out(30,0))
 
     // agg
     outer.agg_packet_out_SRNode.bundle           := cmdRouter.io.agg_packet_out
     cmdRouter.io.agg_buffer_full                 := outer.agg_buffer_full_in_SKNode.bundle
-    outer.agg_core_full_SRNode.bundle            := cmdRouter.io.agg_core_full_out
+    outer.agg_core_status_SRNode.bundle          := cmdRouter.io.agg_core_status_out
     outer.ght_sch_na_out_SRNode.bundle           := cmdRouter.io.ght_sch_na_out
     cmdRouter.io.ght_sch_refresh                 := outer.ghe_sch_refresh_in_SKNode.bundle
     // For big_core GHT
