@@ -264,6 +264,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
 
         rocc.module.io.debug_mcounter                := cmdRouter.io.debug_mcounter
         rocc.module.io.debug_icounter                := cmdRouter.io.debug_icounter
+        rocc.module.io.debug_gcounter                := cmdRouter.io.debug_gcounter
         //===== GuardianCouncil Function: End   ====//
       }
       // Create this FPU just for RoCC
@@ -324,6 +325,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
 
     cmdRouter.io.debug_mcounter                  := debug_mcounter_bridge.io.out
     cmdRouter.io.debug_icounter                  := debug_icounter_bridge.io.out
+    cmdRouter.io.debug_gcounter                  := outer.debug_gcounter_SKNode.bundle
     //===== GuardianCouncil Function: End   ====//
   }
 
