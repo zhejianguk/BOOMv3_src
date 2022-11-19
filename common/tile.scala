@@ -307,7 +307,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     core.io.rocc.busy <> (cmdRouter.io.busy || outer.roccs.map(_.module.io.busy).reduce(_||_))
     core.io.rocc.interrupt := outer.roccs.map(_.module.io.interrupt).reduce(_||_)
     //===== GuardianCouncil Function: Start ====//
-    cmdRouter.io.ghe_packet_in                   := outer.ghe_packet_in_SKNode.bundle
+    cmdRouter.io.ghe_packet_in                   := ((outer.ghe_packet_in_SKNode.bundle) | (outer.agg_packet_in_SKNode.bundle)) // Revisit: current agg packet and filtered packets are using the same channel
     cmdRouter.io.ghe_status_in                   := outer.ghe_status_in_SKNode.bundle
     ghe_bridge.io.in                             := cmdRouter.io.ghe_event_out
     ght_bridge.io.in                             := cmdRouter.io.ght_mask_out

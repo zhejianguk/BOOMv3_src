@@ -1347,7 +1347,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
         reset.asBool) {
     idle_cycles := 0.U
   }
-  assert (!(idle_cycles.value(17)), "Pipeline has hung.")
+  assert (!(idle_cycles.value(31)), "Pipeline has hung.")
 
   if (usingFPU) {
     fp_pipeline.io.debug_tsc_reg := debug_tsc_reg
