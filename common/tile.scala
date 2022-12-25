@@ -204,6 +204,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       core.io.ght_prfs_forward_prf(w)            := ght.io.ght_prfs_forward_prf(w)
       ght.io.ght_prfs_rd(w)                      := core.io.prf_rd(w)
       outer.frontend.module.io.gh.gh_ftq_idx(w)  := Mux((core.io.is_jal_or_jalr(w) === true.B), core.io.ft_idx(w), 0.U)
+      ght.io.ght_is_rvc_in(w)                    := core.io.is_rvc(w)
     }
     ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
     ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status
