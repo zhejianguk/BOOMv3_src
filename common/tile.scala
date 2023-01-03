@@ -210,7 +210,6 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status
     debug_mcounter_bridge.io.in                  := ght.io.debug_mcounter
     debug_icounter_bridge.io.in                  := ght.io.debug_icounter
-    ght.io.ghm_ready                             := outer.ghm_ready_in_SKNode.bundle
   } else { 
     // Not be used, added to pass the compile
     core.io.gh_stall                             := 0.U
