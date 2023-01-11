@@ -175,9 +175,9 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   val gc_core_width                               = outer.boomParams.core.decodeWidth
   if (outer.tileParams.hartId == 0) {
     println("#### Jessica #### Generating GHT for the big core, HartID: ", outer.boomParams.hartId, "...!!!")
-    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 8, 128, gc_core_width, true)))     // revisit: set 32 as the total number of checkers.
+    val ght = Module(new GHT(GHTParams(vaddrBitsExtended, p(XLen), 32, 32, 4, 128, gc_core_width, true)))     // revisit: set 32 as the total number of checkers.
                                                                                                               // revisit: total types of insts is 32
-                                                                                                              // revisit: total number of SEs is 8 
+                                                                                                              // revisit: total number of SEs is 4 
                                                                                                               // revisit: packet size: 128 bits
 
     ght.io.ght_mask_in                           := (ght_bridge.io.out | (!if_correct_process_bridge.io.out))
@@ -185,7 +185,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
     outer.ght_packet_dest_SRNode.bundle          := ght.io.ght_packet_dest
-    core.io.gh_stall                             := ght.io.core_hang_up
+    core.io.gh_stall                             := ((if_correct_process_bridge.io.out) & (ght.io.core_hang_up))
     outer.ghe_event_out_SRNode.bundle            := ghe_bridge.io.out
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
     if_ght_filters_empty_bridge.io.in            := ght.io.ght_filters_empty
