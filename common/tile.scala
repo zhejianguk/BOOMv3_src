@@ -185,7 +185,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
     outer.ght_packet_dest_SRNode.bundle          := ght.io.ght_packet_dest
-    core.io.gh_stall                             := ((if_correct_process_bridge.io.out) & (ght.io.core_hang_up))
+    core.io.gh_stall                             := ght.io.core_hang_up
     outer.ghe_event_out_SRNode.bundle            := ghe_bridge.io.out
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
     if_ght_filters_empty_bridge.io.in            := ght.io.ght_filters_empty
