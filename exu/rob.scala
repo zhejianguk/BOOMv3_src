@@ -113,6 +113,10 @@ class RobIo(
 
   //===== GuardianCouncil Function: Start ====//
   val gh_stall                                  = Input(Bool())
+
+  val gh_effective_jalr_target                  = Input(UInt(xLen.W)) // Revisit: make it is generic
+  val gh_effective_rob_idx                      = Input(UInt(7.W))    // Revisit: make it is generic
+  val gh_effective_valid                        = Input(UInt(1.W))    // Revisit: make it is generic
   //===== GuardianCouncil Function: End  ====//
 }
 
@@ -134,6 +138,10 @@ class CommitSignals(implicit p: Parameters) extends BoomBundle
   val rollback   = Bool()
 
   val debug_wdata = Vec(retireWidth, UInt(xLen.W))
+
+  //===== GuardianCouncil Function: Start ====//
+  val gh_effective_alu_out                  = Vec(retireWidth, UInt(xLen.W)) // Revisit: make it is generic
+  //===== GuardianCouncil Function: End  ====//
 }
 
 /**
@@ -317,6 +325,10 @@ class Rob(
     val rob_fflags    = Mem(numRobRows, Bits(freechips.rocketchip.tile.FPConstants.FLAGS_SZ.W))
 
     val rob_debug_wdata = Mem(numRobRows, UInt(xLen.W))
+
+    //===== GuardianCouncil Function: Start ====//
+    val gh_effective_alu_out_reg                  = Reg(Vec(numRobRows, UInt(xLen.W)))
+    //===== GuardianCouncil Function: End   ====//
     //-----------------------------------------------
     // Dispatch: Add Entry to ROB
 
@@ -406,6 +418,12 @@ class Rob(
     // Can this instruction commit? (the check for exceptions/rob_state happens later).
     //===== GuardianCouncil Function: Start ====//
     can_commit(w)                                := rob_val(rob_head) && !(rob_bsy(rob_head)) && !io.csr_stall && !io.gh_stall
+    
+    when ((io.gh_effective_valid === 1.U) && (GetBankIdx(io.gh_effective_rob_idx) === w.U)) {
+      gh_effective_alu_out_reg (GetRowIdx(io.gh_effective_rob_idx)) := io.gh_effective_jalr_target
+    }
+    
+    io.commit.gh_effective_alu_out(w)            := gh_effective_alu_out_reg (com_idx)   
     //===== GuardianCouncil Function: End  ====//
 
     // use the same "com_uop" for both rollback AND commit

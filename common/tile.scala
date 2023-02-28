@@ -190,15 +190,18 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.core_na                               := outer.sch_na_inSKNode.bundle
     if_ght_filters_empty_bridge.io.in            := ght.io.ght_filters_empty
 
+    val jal_or_jlar_target_buffer                 = Reg(Vec(gc_core_width, UInt(xLen.W)))
+
     outer.ghm_agg_core_id_out_SRNode.bundle      := ght.io.ghm_agg_core_id
     for (w <- 0 until gc_core_width) {
+      jal_or_jlar_target_buffer(w)               := core.io.alu_out(w)
       ght.io.ght_pcaddr_in(w)                    := core.io.pc(w)
       ght.io.ght_inst_in(w)                      := core.io.inst(w)
       ght.io.new_commit(w)                       := core.io.new_commit(w)
       ght.io.ght_alu_in(w)                       := MuxCase(0.U, 
                                                       Array((ght.io.ght_prfs_forward_ldq(w) === true.B) -> lsu.io.ldq_head_addr,
                                                             (ght.io.ght_prfs_forward_stq(w) === true.B) -> lsu.io.stq_head_addr,
-                                                            (ght.io.ght_prfs_forward_ftq(w) === true.B) -> outer.frontend.module.io.gh.jal_or_jlar_target(w)
+                                                            (ght.io.ght_prfs_forward_ftq(w) === true.B) -> jal_or_jlar_target_buffer(w)
                                                            )
                                                            )
       core.io.ght_prfs_forward_prf(w)            := ght.io.ght_prfs_forward_prf(w)

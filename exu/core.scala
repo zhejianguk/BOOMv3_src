@@ -1315,6 +1315,15 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   rob.io.lsu_clr_bsy    := io.lsu.clr_bsy
   rob.io.lsu_clr_unsafe := io.lsu.clr_unsafe
   rob.io.lxcpt          <> io.lsu.lxcpt
+
+  //===== GuardianCouncil Function: Start ====//
+  val gh_effective_jalr_target_reg                = RegInit(0.U(xLen.W))
+  gh_effective_jalr_target_reg                   := jmp_unit.io.brinfo.jalr_target
+  rob.io.gh_effective_rob_idx                    := jmp_unit.io.iresp.bits.uop.rob_idx
+  rob.io.gh_effective_valid                      := jmp_unit.io.iresp.valid
+  rob.io.gh_effective_jalr_target                := gh_effective_jalr_target_reg
+  //===== GuardianCouncil Function: End   ====//
+  
   assert (!(csr.io.singleStep), "[core] single-step is unsupported.")
 
 
@@ -1512,13 +1521,8 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
   }
 
   //===== GuardianCouncil Function: Start ====//
-  val gh_effective_jalr_target_reg                = RegInit(0.U(xLen.W))
   val ght_prfs_forward_prf_reg                    = Reg(Vec(coreWidth, Bool()))
-
-  when (jmp_unit.io.brinfo.valid){
-    gh_effective_jalr_target_reg                 := jmp_unit.io.brinfo.jalr_target
-  }
-
+  
   for (w <- 0 until coreWidth) {
     ght_prfs_forward_prf_reg(w)                  := io.ght_prfs_forward_prf(w)
 
@@ -1532,6 +1536,7 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     io.is_jal_or_jalr(w)                         := rob.io.commit.uops(w).is_jal|rob.io.commit.uops(w).is_jalr
     io.ft_idx(w)                                 := rob.io.commit.uops(w).ftq_idx
     io.is_rvc(w)                                 := rob.io.commit.uops(w).is_rvc
+    io.alu_out(w)                                := rob.io.commit.gh_effective_alu_out(w);
   }
   io.ght_prv                                     := csr.io.status.prv
   //===== GuardianCouncil Function: End ====//
