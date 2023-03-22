@@ -170,6 +170,10 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
   val if_ght_filters_empty_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
   val debug_mcounter_bridge = Module(new GH_Bridge(GH_BridgeParams(64)))
   val debug_icounter_bridge = Module(new GH_Bridge(GH_BridgeParams(64)))
+  val debug_bp_checker_bridge = Module(new GH_Bridge(GH_BridgeParams(64)))
+  val debug_bp_cdc_bridge = Module(new GH_Bridge(GH_BridgeParams(64)))
+  val debug_bp_filter_bridge = Module(new GH_Bridge(GH_BridgeParams(64)))
+  val debug_bp_reset_bridge = Module(new GH_Bridge(GH_BridgeParams(1)))
 
   //===== GuardianCouncil Function: Start ====//
   val gc_core_width                               = outer.boomParams.core.decodeWidth
@@ -183,6 +187,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght.io.ght_mask_in                           := (ght_bridge.io.out | (!if_correct_process_bridge.io.out))
     ght.io.ght_cfg_in                            := ght_cfg_bridge.io.out
     ght.io.ght_cfg_valid                         := ght_cfg_v_bridge.io.out
+    ght.io.debug_bp_reset                        := debug_bp_reset_bridge.io.out
     outer.ght_packet_out_SRNode.bundle           := ght.io.ght_packet_out
     outer.ght_packet_dest_SRNode.bundle          := ght.io.ght_packet_dest
     core.io.gh_stall                             := ght.io.core_hang_up
@@ -209,10 +214,14 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
       outer.frontend.module.io.gh.gh_ftq_idx(w)  := Mux((core.io.is_jal_or_jalr(w) === true.B), core.io.ft_idx(w), 0.U)
       ght.io.ght_is_rvc_in(w)                    := core.io.is_rvc(w)
     }
+    ght.io.debug_bp_in                           := outer.debug_bp_in_SKNode.bundle
     ght.io.ght_stall                             := outer.bigcore_hang_in_SKNode.bundle
     ght_buffer_status_bridge.io.in               := ght.io.ght_buffer_status
     debug_mcounter_bridge.io.in                  := ght.io.debug_mcounter
     debug_icounter_bridge.io.in                  := ght.io.debug_icounter
+    debug_bp_checker_bridge.io.in                := ght.io.debug_bp_checker
+    debug_bp_cdc_bridge.io.in                    := ght.io.debug_bp_cdc
+    debug_bp_filter_bridge.io.in                 := ght.io.debug_bp_filter
   } else { 
     // Not be used, added to pass the compile
     core.io.gh_stall                             := 0.U
@@ -260,6 +269,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
         cmdRouter.io.ghe_event_in                    := rocc.module.io.ghe_event_out
         cmdRouter.io.ght_cfg_in                      := rocc.module.io.ght_cfg_out
         cmdRouter.io.ght_cfg_valid_in                := rocc.module.io.ght_cfg_valid
+        cmdRouter.io.debug_bp_reset_in               := rocc.module.io.debug_bp_reset
 
         cmdRouter.io.agg_packet_in                   := rocc.module.io.agg_packet_out
         rocc.module.io.agg_buffer_full               := cmdRouter.io.agg_buffer_full
@@ -276,6 +286,10 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
         rocc.module.io.debug_mcounter                := cmdRouter.io.debug_mcounter
         rocc.module.io.debug_icounter                := cmdRouter.io.debug_icounter
         rocc.module.io.debug_gcounter                := cmdRouter.io.debug_gcounter
+        
+        rocc.module.io.debug_bp_checker              := cmdRouter.io.debug_bp_checker
+        rocc.module.io.debug_bp_cdc                  := cmdRouter.io.debug_bp_cdc
+        rocc.module.io.debug_bp_filter               := cmdRouter.io.debug_bp_filter
         //===== GuardianCouncil Function: End   ====//
       }
       // Create this FPU just for RoCC
@@ -317,6 +331,7 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
     ght_bridge.io.in                             := cmdRouter.io.ght_mask_out
     ght_cfg_bridge.io.in                         := cmdRouter.io.ght_cfg_out
     ght_cfg_v_bridge.io.in                       := cmdRouter.io.ght_cfg_valid
+    debug_bp_reset_bridge.io.in                  := cmdRouter.io.debug_bp_reset
     outer.ght_status_out_SRNode.bundle           := Cat(if_ght_filters_empty_bridge.io.out, cmdRouter.io.ght_status_out(30,0))
 
     // agg
@@ -336,6 +351,9 @@ class BoomTileModuleImp(outer: BoomTile) extends BaseTileModuleImp(outer){
 
     cmdRouter.io.debug_mcounter                  := debug_mcounter_bridge.io.out
     cmdRouter.io.debug_icounter                  := debug_icounter_bridge.io.out
+    cmdRouter.io.debug_bp_checker                := debug_bp_checker_bridge.io.out
+    cmdRouter.io.debug_bp_cdc                    := debug_bp_cdc_bridge.io.out
+    cmdRouter.io.debug_bp_filter                 := debug_bp_filter_bridge.io.out
     cmdRouter.io.debug_gcounter                  := outer.debug_gcounter_SKNode.bundle
     //===== GuardianCouncil Function: End   ====//
   }
