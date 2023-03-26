@@ -82,6 +82,10 @@ class FpPipeline(implicit p: Parameters) extends BoomModule with tile.HasFPUPara
   require (exe_units.count(_.readsFrf) == issue_unit.issueWidth)
   require (exe_units.numFrfWritePorts + numLlPorts == numWakeupPorts)
 
+  //===== GuardianCouncil Function: Start ====//
+  issue_unit.io.debugnp_occupy_p(0) := 0.U
+  issue_unit.io.debugnp_occupy_p(1) := 0.U
+  //===== GuardianCouncil Function: End ====//
   //*************************************************************
   // Issue window logic
 

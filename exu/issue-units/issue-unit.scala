@@ -89,6 +89,9 @@ class IssueUnitIO(
   val event_empty      = Output(Bool()) // used by HPM events; is the issue unit empty?
 
   val tsc_reg          = Input(UInt(width=xLen.W))
+  //===== GuardianCouncil Function: Start ====//
+  val debugnp_occupy_p = Input(Vec(2, UInt(1.W)))
+  //===== GuardianCouncil Function: End   ====//
 }
 
 /**

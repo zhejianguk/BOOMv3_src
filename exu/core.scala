@@ -995,6 +995,14 @@ class BoomCore(usingTrace: Boolean)(implicit p: Parameters) extends BoomModule
     rob_io_commit_uops_pdst_reg(w)                 := rob.io.commit.uops(w).pdst
     iregfile.io.read_ports(numIrfReadPorts+w).addr := Mux(io.ght_prfs_forward_prf(w) === true.B, rob_io_commit_uops_pdst_reg(w), 0.U)
   }
+  
+  /* Simulating no-port delay */
+  // Revisit: make it is generic
+  for (y <- 0 until coreWidth/2){
+    int_iss_unit.io.debugnp_occupy_p(y)            := 0.U
+  }
+  mem_iss_unit.io.debugnp_occupy_p(0)              := io.ght_prfs_forward_prf(0) | io.ght_prfs_forward_prf(1)
+  mem_iss_unit.io.debugnp_occupy_p(1)              := io.ght_prfs_forward_prf(2) | io.ght_prfs_forward_prf(3)
   //===== GuardianCouncil Function: End ====//
 
 

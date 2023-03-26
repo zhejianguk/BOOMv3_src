@@ -113,7 +113,15 @@ class IssueUnitCollapsing(
     var uop_issued = false.B
 
     for (w <- 0 until issueWidth) {
-      val can_allocate = (issue_slots(i).uop.fu_code & io.fu_types(w)) =/= 0.U
+      //===== GuardianCouncil Function: Start ====//
+      val port_is_occupied: UInt = if (w < 2) {
+        io.debugnp_occupy_p(w)
+        } else {
+          0.U
+        }
+        
+      val can_allocate = ((issue_slots(i).uop.fu_code & io.fu_types(w)) =/= 0.U) && (port_is_occupied =/= 1.U)
+      //===== GuardianCouncil Function: End   ====//
 
       when (requests(i) && !uop_issued && can_allocate && !port_issued(w)) {
         issue_slots(i).grant := true.B
